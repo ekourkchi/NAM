@@ -1,0 +1,100 @@
+<html>
+
+<header>
+
+
+<script>
+function ajaxRequest(reqURL)
+{
+    //Creating a new XMLHttpRequest object
+    var xmlhttp;
+    if (window.XMLHttpRequest){
+        xmlhttp = new XMLHttpRequest(); //for IE7+, Firefox, Chrome, Opera, Safari
+    } else {
+        xmlhttp = new ActiveXObject("Microsoft.XMLHTTP"); //for IE6, IE5
+    }
+    
+    document.getElementById("message").innerHTML = 'plz wait';
+    document.body.classList.add('busy-cursor');
+    document.getElementById("main").classList.add('mask');
+    
+    //Create a asynchronous GET request
+    xmlhttp.open("GET", reqURL, true);
+     
+    //When readyState is 4 then get the server output
+    xmlhttp.onreadystatechange = function() {
+        if (xmlhttp.readyState == 4) {
+            if (xmlhttp.status == 200)
+            {
+                document.getElementById("message").innerHTML = xmlhttp.responseText;
+                //alert(xmlhttp.responseText);
+                document.body.classList.remove('busy-cursor');
+                document.getElementById("main").classList.remove('mask');
+            }
+            else
+            {   
+                document.body.classList.remove('busy-cursor');
+                document.getElementById("main").classList.remove('mask');
+                alert('Something is wrong !!');
+            }
+        }
+    };
+     
+    xmlhttp.send(null);
+}
+</script>
+
+
+<style>
+
+body.busy-cursor {
+  cursor: progress;
+}
+
+body { height: 100%; }
+
+.mask { 
+z-index: 9999; 
+position: absolute; 
+top: 0; 
+left: 0; 
+height: 100%; 
+width: 100%; 
+background-color: #fff; 
+opacity: 0;
+filter: alpha(opacity=30); /* For IE8 and earlier */}
+
+</style>
+
+
+</heder>
+
+
+
+<body>
+
+<!--<div id='main'></div>-->
+
+
+<input type="button" value="My Name" onclick='ajaxRequest("ajax.php")'/>
+
+<span id="message"></span>
+
+<p><a href='http://edd.ifa.hawaii.edu'>EDD</a></p>
+
+
+
+
+</body>
+
+
+
+
+
+
+
+
+
+
+
+</html>
