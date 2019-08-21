@@ -16,7 +16,7 @@ from bokeh.plotting import *
 from bokeh.embed import components
 from bokeh.models import ColumnDataSource, LabelSet, HoverTool, Range1d, Label, TapTool, OpenURL, CustomJS, CrosshairTool
 from bokeh.models import LinearAxis
-
+from bokeh.transform import linear_cmap
 ##########################################
 def lineaR(x,x1,y1,x2,y2):
     y = (x-x1)*(y2-y1)/(x2-x1)+y1
@@ -87,7 +87,7 @@ def read_dat(version='V6'):
     ind = np.where(dist>0)
     
   
-    return nest[ind],pgc1[ind],dist[ind],Vgsr_observe[ind],Vgsr_model[ind],sgl_catalog[ind],sgb_catalog[ind], name[ind]
+    return nest[ind],pgc1[ind],dist[ind],Vgsr_observe[ind],Vgsr_model[ind],sgl_catalog[ind],sgb_catalog[ind], name[ind], ed[ind]
     
 
 ###############################################################
@@ -110,7 +110,8 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
          p.yaxis.major_label_text_font_size = "12pt"
          p.xaxis.major_label_text_font_size = "12pt"
         
-         p.x_range = Range1d(0, 45)
+         p.x_range = Range1d(0, 42)
+         p.y_range = Range1d(-200, 3250)
         
          p.legend.location = "top_left"
          p.legend.label_text_font_size = "12pt"
@@ -235,7 +236,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      else: VVV=False
      
      
-     nest, pgc1, dist_catalog, Vgsr_observe, Vgsr_model, sgl_catalog, sgb_catalog, name_catalog = read_dat(version='V6')
+     nest, pgc1, dist_catalog, Vgsr_observe, Vgsr_model, sgl_catalog, sgb_catalog, name_catalog, ed_catalog = read_dat(version='V6')
      
 
      N = len(sgl_catalog)    
@@ -276,46 +277,59 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      
      p.grid.grid_line_color="gainsboro"
      
-     
-     source = ColumnDataSource({'D_input': Dn, 'Vgsr_model': cz})
-     curve = p.line('D_input', 'Vgsr_model', source=source, line_width=2, color="blue", legend='Model')
-     
-     
-     ttp = """
-    <div>
-        <div>
-            <span style="font-size: 14px; color: blue;">D_input:</span>
-            <span style="font-size: 14px; font-weight: bold;">@D_input{int}</span>
-        </div>
-        <div>
-            <span style="font-size: 14px; color: blue;">Vgsr_model:</span>
-            <span style="font-size: 14px; font-weight: bold;">@Vgsr_model{int}</span>
-        </div>  
-    </div>     
-     """
-     hover = HoverTool(tooltips=ttp, renderers=[curve])
-     
-     #hover = HoverTool(tooltips=[ 
-               #("D_input", "@D_input{int}"),
-               #("Vgsr_model", "@Vgsr_model{int}"),      
-               #], renderers=[curve])
-     
-     
-     
 
-     
-     hover.point_policy='snap_to_data'
-     hover.line_policy='nearest'
-     #hover.mode='vline'
-     p.add_tools(hover)    
-     
-
-     
-
- 
      if len(ind)>0:
-            source = ColumnDataSource({'pgc1': pgc1[ind], 'D_input': dist_catalog[ind], 'Vgsr_model': Vgsr_model[ind], 'Vgsr_observe':Vgsr_observe[ind], 'name':name_catalog[ind]})
-            data_p = p.cross('D_input', 'Vgsr_model', source=source, size=7, color="red", alpha=0.8, hover_color="black", hover_alpha=1, legend='Data')
+         
+            palette = ['black', 'chocolate', 'red', 'green']
+
+            n_ind = len(ind)
+            dye  = np.zeros(n_ind)
+            size = np.zeros(n_ind)
+            dist_ind = dist_catalog[ind]
+            ed_ind = ed_catalog[ind]
+            pgc1_ind = pgc1[ind]
+            error = dist_ind*ed_ind
+            Vgsr_ind = Vgsr_model[ind]
+            # create the coordinates for the errorbars
+            err_xs = []
+            err_ys = []
+
+            
+            for iind in range(n_ind):
+                if ed_ind[iind]<=0.05:
+                    size[iind]=11
+                    dye[iind] = 2
+                elif ed_ind[iind]<=0.15:
+                    size[iind]=6
+                    dye[iind] = 3
+                else:
+                    size[iind]= 0
+                if pgc1_ind[iind]==41361 or pgc1_ind[iind]==12651:
+                    size[iind]=17
+                    dye[iind] = 1
+                
+                if ed_ind[iind]<=0.15:
+                    err_xs.append((dist_ind[iind]- error[iind], dist_ind[iind]+ error[iind]))
+                    err_ys.append((Vgsr_ind[iind] , Vgsr_ind[iind]))
+            
+            if len(err_xs)>0:
+                p.multi_line(err_xs, err_ys, color='gray')    
+         
+            mapper = linear_cmap(field_name='DYE', palette=palette, low=0, high=3)
+            
+            source = ColumnDataSource({'pgc1': pgc1_ind,
+                                       'D_input': dist_ind, 
+                                       'Vgsr_model': Vgsr_ind, 'Vgsr_observe':Vgsr_observe[ind], 'name':name_catalog[ind],
+                                       'ed': ed_ind,
+                                       'error': error,
+                                       'size': size, 
+                                       'DYE': dye
+                                       })
+            
+            data_p = p.cross('D_input', 'Vgsr_model', 
+                             source=source, size=7, color="black",                             legend='Data')
+            _data = p.circle('D_input', 'Vgsr_model', size="size", source=source,
+                             line_color="black", fill_color=mapper, line_width=1)
 
 
             ttp2 = """
@@ -356,6 +370,31 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
             hover.line_policy='nearest'
             p.add_tools(hover)
      
+
+     source = ColumnDataSource({'D_input': Dn, 'Vgsr_model': cz})
+     curve = p.line('D_input', 'Vgsr_model', source=source, line_width=2, color="blue", legend='Model')
+     
+     
+     ttp = """
+    <div>
+        <div>
+            <span style="font-size: 14px; color: blue;">D_input:</span>
+            <span style="font-size: 14px; font-weight: bold;">@D_input{int}</span>
+        </div>
+        <div>
+            <span style="font-size: 14px; color: blue;">Vgsr_model:</span>
+            <span style="font-size: 14px; font-weight: bold;">@Vgsr_model{int}</span>
+        </div>  
+    </div>     
+     """
+     hover = HoverTool(tooltips=ttp, renderers=[curve])
+     
+     hover.point_policy='snap_to_data'
+     hover.line_policy='nearest'
+     #hover.mode='vline'
+     p.add_tools(hover) 
+ 
+ 
      p.line(np.arange(50),np.arange(50)*h0*100., line_width=1, color="black", line_dash='dashed', legend='H0=75')
      
      if VVV:
@@ -427,7 +466,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
 ######################### Online Mode
     
      ## offline mode
-     ##show(p)
+     #show(p)
      
      return sgl, sgb
 
