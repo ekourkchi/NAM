@@ -101,7 +101,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
          p.title.text_font_size = '13pt'
          p.title.text_color = "red"
          p.grid.grid_line_color="gainsboro"
-         p.line(np.arange(50),np.arange(50)*75, line_width=1, color="black", line_dash='dashed', legend='H0=75')
+         p.line(np.arange(50),np.arange(50)*75, line_width=1, color="red", line_dash='dashed', legend='H0=75')
          p.xaxis.axis_label = 'D_input [Mpc]'
          p.yaxis.axis_label = 'Vgsr_model [km/s]'
         
@@ -278,10 +278,17 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      p.grid.grid_line_color="gainsboro"
      
 
+     
+
+     
+
+ 
      if len(ind)>0:
          
             palette = ['black', 'chocolate', 'red', 'green']
-
+            
+            
+            
             n_ind = len(ind)
             dye  = np.zeros(n_ind)
             size = np.zeros(n_ind)
@@ -294,6 +301,8 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
             err_xs = []
             err_ys = []
 
+            # plot them
+                    
             
             for iind in range(n_ind):
                 if ed_ind[iind]<=0.05:
@@ -395,7 +404,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      p.add_tools(hover) 
  
  
-     p.line(np.arange(50),np.arange(50)*h0*100., line_width=1, color="black", line_dash='dashed', legend='H0=75')
+     p.line(np.arange(50),np.arange(50)*h0*100., line_width=1, color="red", line_dash='dashed', legend='H0=75')
      
      if VVV:
          vel_list = []

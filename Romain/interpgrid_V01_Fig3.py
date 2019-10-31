@@ -21,6 +21,36 @@ from bokeh.models.widgets import RadioButtonGroup
 from bokeh.layouts import column
 from bokeh.transform import linear_cmap
 ##########################################
+def Vh2V3k(el,b, Vh):
+  
+    alpha = np.pi / 180.
+    cosb = np.cos(b*alpha)
+    sinb = np.sin(b*alpha)
+    cosl = np.cos(el*alpha)
+    sinl = np.sin(el*alpha)
+    
+    v3k = Vh-25.2*cosl*cosb-245.7*sinl*cosb+276.8*sinb
+
+    return v3k
+##########################################
+def Vgsr2Vls(el,b, vgsrm):
+    
+    alpha = np.pi / 180.
+    cosb = np.cos(b*alpha)
+    sinb = np.sin(b*alpha)
+    cosl = np.cos(el*alpha)
+    sinl = np.sin(el*alpha)
+    
+    ivh = vgsrm-11.1*cosl*cosb-251.*sinl*cosb-7.25*sinb
+    
+    vls= ivh-26.*cosl*cosb+317.*sinl*cosb-8.*sinb
+    
+    vls= vgsrm-37.*cosl*cosb+66.*sinl*cosb-15.*sinb
+    
+    return vls
+
+
+##########################################
 def deAdjust(cz):
     
      Cs = 299792.458
@@ -107,7 +137,7 @@ def loadGrid(npz_file):
 def read_dat():
     
     ##../secure/cf3_model_romain/
-    datfile = '../secure/cf3_model_romain/table3_linearDV.csv'
+    datfile = './table3_linearDV.csv'
     test = np.genfromtxt(datfile, delimiter=',', filling_values=None, names=True, dtype=None) 
     
     
@@ -211,10 +241,53 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
          with HiddenPrints():
             tr = wcs.Transformation("supergalactic j2000 j2000", "galactic")
          l, b = tr((sgl, sgb))
-     
- 
      #################################
-     f = np.load("../secure/cf3_model_romain/res.npz")
+
+
+     X,Y,Z,Vx,Vy,Vz = loadGrid('../nam/grid_ascii.npz')
+     
+     Dn_nl = np.arange(38)+1
+     dtor = np.pi/180.
+     h0 = 0.75
+     vsun = 240.
+     
+     xhat= np.cos(sgl*dtor)*np.cos(sgb*dtor)
+     yhat= np.sin(sgl*dtor)*np.cos(sgb*dtor)
+     zhat= np.sin(sgb*dtor)
+     
+     x = xhat*Dn_nl
+     y = yhat*Dn_nl
+     z = zhat*Dn_nl   
+     
+     ndis = len(Dn_nl)
+     cz_nl = np.zeros(ndis)
+
+     
+     for i in range(ndis):
+         
+         dis2 = (X-x[i])**2 + (Y-y[i])**2 + (Z-z[i])**2
+         
+         # Reduce number of distances to check
+         nearby, = np.where(dis2<10.)
+         
+         dis3 = dis2[nearby]
+         
+         # Sort distances
+         srt = np.argsort(dis3)
+         
+         nearest = nearby[srt[0:8]]
+
+         best_X = X[nearest[0]]
+         best_Y = Y[nearest[0]]
+         best_Z = Z[nearest[0]]
+         best_Vx = Vx[nearest[0]]
+         best_Vy = Vy[nearest[0]]
+         best_Vz = Vz[nearest[0]]
+         cz_nl[i] = (best_Vx*xhat + best_Vy*yhat + best_Vz*zhat + h0*Dn_nl[i])*100.
+         cz_nl[i] = Vgsr2Vls(l,b, cz_nl[i])
+
+     #################################
+     f = np.load("res.npz")
      delta = f["arr_0"] # Density field in super galactic coordinates on grid 128x128x128 and box of 800 Mpc/h_75
      v = f["arr_1"]     # velocity field in super galactic coordinates on grid 128x128x128 and box of 800 Mpc/h_75
      assert(v.shape == (3,128,128,128))
@@ -566,8 +639,8 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      p.yaxis.major_label_text_font_size = "12pt"
      p.xaxis.major_label_text_font_size = "12pt"
      
-     p.x_range = Range1d(0, 250)
-     p.y_range = Range1d(-200, 15000)
+     p.x_range = Range1d(20, 60)
+     p.y_range = Range1d(1000, 4000)
      
      p.legend.location = "top_left"
      p.legend.label_text_font_size = "12pt"
@@ -621,7 +694,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
     
      #p = column(p, radio_button_group)
      
-     VgivesD = np.genfromtxt('../secure/cf3_model_romain/VgivesD.csv', delimiter=',', filling_values=None, names=True, dtype=None)
+     VgivesD = np.genfromtxt('./VgivesD.csv', delimiter=',', filling_values=None, names=True, dtype=None)
      Hub_d   = VgivesD['d']
      Hub_Vls = VgivesD['Vls']
      Hub_Vlsm = VgivesD['Vlsm']
@@ -694,6 +767,15 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
          if len(dist_list)==0: VVV=False
          
      else: VVV=False
+     
+     
+     
+     
+     source = ColumnDataSource({'D_input': Dn_nl, 'Vgsr_model': cz_nl})
+     curve = p.line('D_input', 'Vgsr_model', source=source, line_width=2, color="black", legend='Model')     
+     
+     
+     
 #######################################################################3
 ###############################################################3
 
@@ -948,8 +1030,8 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
 ######################### Online Mode
     
      ##offline mode
-     ##print 'Showing the Plot ... '
-     ##show(p)
+     print 'Showing the Plot ... '
+     show(p)
      
      return SGL, SGB
 
@@ -1000,9 +1082,9 @@ if __name__ == "__main__":
     #fname = 'grid_ascii.dat'
     #grid2npz(fname)    
     
-    print '<table>'
+    #print '<table>'
     
-    try:
+    if True: # try:
         sgl = float(sys.argv[1])
         sgb = float(sys.argv[2])
         cone = float(sys.argv[3])
@@ -1027,14 +1109,14 @@ if __name__ == "__main__":
             myCoords(0,0, addCord=False)
 
         
-    except:
-        pass
-        print '<tr><td>'
-        print '<p><font color="red">&nbsp;&nbsp;Something went wrong !&nbsp;&nbsp;</font></p>'
-        print '<p><font color="green">&nbsp;&nbsp;Check the input parameters.&nbsp;&nbsp;</font></p>'
-        print '</td></tr>'
+    #except:
+        #pass
+        #print '<tr><td>'
+        #print '<p><font color="red">&nbsp;&nbsp;Something went wrong !&nbsp;&nbsp;</font></p>'
+        #print '<p><font color="green">&nbsp;&nbsp;Check the input parameters.&nbsp;&nbsp;</font></p>'
+        #print '</td></tr>'
     
 
-    print '</table>'
+    #print '</table>'
 
 ###############################################################
