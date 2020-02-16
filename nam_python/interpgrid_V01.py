@@ -8,8 +8,8 @@ __email__ = "ehsan@ifa.hawaii.edu"
 __status__ = "Production"
 
 import os, sys
-reload(sys)
-sys.setdefaultencoding('utf8')
+#reload(sys)
+#sys.setdefaultencoding('utf8')
 import numpy as np
 from kapteyn import wcs
 from bokeh.plotting import *
@@ -101,7 +101,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
          p.title.text_font_size = '13pt'
          p.title.text_color = "red"
          p.grid.grid_line_color="gainsboro"
-         p.line(np.arange(50),np.arange(50)*75, line_width=1, color="red", line_dash='dashed', legend='H0=75')
+         p.line(np.arange(50),np.arange(50)*75, line_width=1, color="red", line_dash='dashed', legend_label='H0=75')
          p.xaxis.axis_label = 'D_input [Mpc]'
          p.yaxis.axis_label = 'Vgsr_model [km/s]'
         
@@ -132,12 +132,12 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
          cross.line_color = 'green'
          p.add_tools(cross) 
          
-         print '<tr><td>'
+         print('<tr><td>')
          script, div = components(p)
          script = '\n'.join(['' + line for line in script.split('\n')])
-         print div
-         print script 
-         print '</td></tr>'
+         print(div)
+         print(script )
+         print('</td></tr>')
          return l, b
      
      DDD = False
@@ -336,7 +336,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
                                        })
             
             data_p = p.cross('D_input', 'Vgsr_model', 
-                             source=source, size=7, color="black",                             legend='Data')
+                             source=source, size=7, color="black", legend_label='Data')
             _data = p.circle('D_input', 'Vgsr_model', size="size", source=source,
                              line_color="black", fill_color=mapper, line_width=1)
 
@@ -381,7 +381,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      
 
      source = ColumnDataSource({'D_input': Dn, 'Vgsr_model': cz})
-     curve = p.line('D_input', 'Vgsr_model', source=source, line_width=2, color="blue", legend='Model')
+     curve = p.line('D_input', 'Vgsr_model', source=source, line_width=2, color="blue", legend_label='Model')
      
      
      ttp = """
@@ -404,7 +404,7 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      p.add_tools(hover) 
  
  
-     p.line(np.arange(50),np.arange(50)*h0*100., line_width=1, color="red", line_dash='dashed', legend='H0=75')
+     p.line(np.arange(50),np.arange(50)*h0*100., line_width=1, color="red", line_dash='dashed', legend_label='H0=75')
      
      if VVV:
          vel_list = []
@@ -449,27 +449,32 @@ def interpgrid(l, b, cone=20, coordinates='supergalactic', veldist=-1, VD=10):
      cross.line_alpha = 0.3
      cross.line_color = 'green'
      p.add_tools(cross) 
+     
+    # from bokeh.plotting import output_file, save
+    # output_file("test.html")
+    # save(p)
+     
 
 ######################### Online Mode
      script, div = components(p)
      script = '\n'.join(['' + line for line in script.split('\n')])
      
-     print '<tr><td>'
-     print div
-     print script 
-     print '</td></tr>'
+     print('<tr><td>')
+     print(div)
+     print(script)
+     print('</td></tr>')
      
      if DDD or VVV:
          
-         print '<tr><td align="center"><table id="calc" border="1">'
+         print('<tr><td align="center"><table id="calc" border="1">')
          
-         print '<tr><th id="calc"><b>D<sub>input</sub></b><br><i>Mpc</i></th><th id="calc"><b>V<sub>gsr</sub> -model</b><br><i>km/s</i></th></tr>'
+         print('<tr><th id="calc"><b>D<sub>input</sub></b><br><i>Mpc</i></th><th id="calc"><b>V<sub>gsr</sub> -model</b><br><i>km/s</i></th></tr>')
          for i in range(len(dist_list)):
-             print '<tr><td id="calc">'+'%.2f'%dist_list[i]+'</td>'
-             print '<td id="calc">'+'%d'%vel_list[i]+'</td></tr>'
+             print('<tr><td id="calc">'+'%.2f'%dist_list[i]+'</td>')
+             print('<td id="calc">'+'%d'%vel_list[i]+'</td></tr>')
              
          
-         print '</table></td></tr>'         
+         print('</table></td></tr>')
          
 
 ######################### Online Mode
@@ -494,7 +499,7 @@ def myCoords(sgl,sgb, addCord = True):
         
         s+= '</td></tr>'
         
-        print s  
+        print(s)
         return
         
     
@@ -518,7 +523,7 @@ def myCoords(sgl,sgb, addCord = True):
     
     s+= '</td></tr>'
     
-    print s 
+    print(s)
 
 
 if __name__ == "__main__":
@@ -526,7 +531,7 @@ if __name__ == "__main__":
     #fname = 'grid_ascii.dat'
     #grid2npz(fname)    
     
-    print '<table>'
+    print('<table>')
     
     try:
         sgl = float(sys.argv[1])
@@ -554,13 +559,13 @@ if __name__ == "__main__":
 
         
     except:
-        print '<tr><td>'
-        print '<p><font color="red">&nbsp;&nbsp;Something went wrong !&nbsp;&nbsp;</font></p>'
-        print '<p><font color="green">&nbsp;&nbsp;Check the input parameters.&nbsp;&nbsp;</font></p>'
-        print '</td></tr>'
+        print('<tr><td>')
+        print('<p><font color="red">&nbsp;&nbsp;Something went wrong !&nbsp;&nbsp;</font></p>')
+        print('<p><font color="green">&nbsp;&nbsp;Check the input parameters.&nbsp;&nbsp;</font></p>')
+        print('</td></tr>')
     
 
-    print '</table>'
+    print('</table>')
 
 
     
